@@ -1,0 +1,52 @@
+version: '3'
+
+networks:
+ zabbix_network:
+    driver: bridge
+
+services:
+ zabbix-server:
+   hostname: zabbix-server
+   build: ./zabbix-server
+   links:
+     - postgresql-11:pg
+   depends_on:
+     - postgresql-11
+   networks:
+     - zabbix_network
+
+ zabbix-client:
+  hostname: zabbix-client
+  build: ./zabbix-client
+  ports:
+    - "11521:1521"
+  networks:
+    - zabbix_network
+  volumes:
+    -
+
+ postgresql-11:
+  hostname: postgresql
+  build: ./postgresql-11
+  ports:
+    - "15432:5432"
+  environment:
+    POSTGRES_PASSWORD: password
+  networks:
+    - zabbix_network
+
+
+ phppgadmin:
+  hostname: phppgadmin
+  build: ./phpPgAdmin
+  links:
+    - postgresql-11:pg
+  depends_on:
+    - postgresql-11
+  ports:
+    - "29000:80"
+  environment:
+     POSTGRES_USER: postgres
+     POSTGRES_PASSWORD: password
+  networks:
+    - zabbix_network
