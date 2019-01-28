@@ -64,7 +64,15 @@ RUN set -ex; \
 # uid                  PostgreSQL Debian Repository
 	key='B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8'; \
 	export GNUPGHOME="$(mktemp -d)"; \
-	gpg --batch --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
+	#gpg --batch --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
+	for keyserver in $(shuf -e \
+			ha.pool.sks-keyservers.net \
+			hkp://p80.pool.sks-keyservers.net:80 \
+			keyserver.ubuntu.com \
+			hkp://keyserver.ubuntu.com:80 \
+			pgp.mit.edu) ; do \
+		gpg --keyserver $keyserver --recv-keys "$key" && break || true ; \
+	done && \
 	gpg --batch --export "$key" > /etc/apt/trusted.gpg.d/postgres.gpg; \
 	command -v gpgconf > /dev/null && gpgconf --kill all; \
 	rm -rf "$GNUPGHOME"; \
@@ -135,9 +143,9 @@ RUN set -ex; \
 			;; \
 	esac; \
 	\
-	apt-get install -y postgresql-common; \
+	apt-get install -y --allow-unauthenticated postgresql-common; \
 	sed -ri 's/#(create_main_cluster) .*$/\1 = false/' /etc/postgresql-common/createcluster.conf; \
-	apt-get install -y \
+	apt-get install -y --allow-unauthenticated \
 		"postgresql-$PG_MAJOR=$PG_VERSION" \
 	; \
 	\
